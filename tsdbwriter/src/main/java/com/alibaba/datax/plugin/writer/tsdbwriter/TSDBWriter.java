@@ -133,7 +133,7 @@ public class TSDBWriter extends Writer {
                 if (StringUtils.isBlank(database)) {
                     LOG.info("The parameter [" + Key.DATABASE + "] is blank.");
                 } else {
-                    tsdb.useDatabase(database);
+                 //   tsdb.useDatabase(database);
                 }
 
                 LOG.info("Tsdb config:" + originalConfig.toJSON());
