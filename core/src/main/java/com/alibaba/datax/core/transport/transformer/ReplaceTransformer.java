@@ -13,10 +13,37 @@ import java.util.Arrays;
  * Created by liqiang on 16/3/4.
  */
 public class ReplaceTransformer extends Transformer {
+    //设置Transformer名字，便于配置
     public ReplaceTransformer() {
         setTransformerName("dx_replace");
     }
 
+    /**
+     * 入参的record表示源数据，返回的是处理后的record
+     *
+     * 调用流程：
+     * Transformer.evaluate()
+     * <=
+     * ComplexTransformer.evaluate()
+     * <=
+     * TransformerExchanger.doTransformer()
+     * <=
+     * RecordSender.sendToWriter()
+     * <=
+     * Reader.Task.startRead()
+     *
+     *
+     *翻译上面的流程，用人话说就是（这里改为了正向流程了）：
+     * Reader读内容（`Reader.Task.startRead()`）
+     * =>
+     * Reader读内容的方法最后一步调用发送给Writer（`RecordSender.sendToWriter() `）
+     * =>
+     * 发送之前使用Exchanger交换机来进行transform操作（`TransformerExchanger.doTransformer() `）
+     * =>
+     * transform会触发evaluate去处理业务（`ComplexTransformer.evaluate()`）
+     * =>
+     * 最后处理发送到writer前的业务操作（`Transformer.evaluate() `）
+     */
     @Override
     public Record evaluate(Record record, Object... paras) {
 
@@ -24,6 +51,7 @@ public class ReplaceTransformer extends Transformer {
         int startIndex;
         int length;
         String replaceString;
+        // 以下开始处理数据，这里做的是替换的操作
         try {
             if (paras.length != 4) {
                 throw new RuntimeException("dx_replace paras must be 4");

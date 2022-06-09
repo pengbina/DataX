@@ -58,7 +58,6 @@ public class AdbpgWriter extends Writer {
 
         @Override
         public void post() {
-
             Adb4pgUtil.post(originalConfig);
         }
 
@@ -66,9 +65,6 @@ public class AdbpgWriter extends Writer {
         public void destroy() {
 
         }
-
-
-
     }
 
     public static class Task extends Writer.Task {

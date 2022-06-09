@@ -144,6 +144,11 @@ public class StreamWriter extends Writer {
         public void prepare() {
         }
 
+        /**
+         * 从RecordReceiver里读取接收的内容，写入目标源
+         *
+         * @param recordReceiver
+         */
         @Override
         public void startWrite(RecordReceiver recordReceiver) {
 

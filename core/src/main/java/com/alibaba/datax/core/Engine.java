@@ -29,12 +29,22 @@ import java.util.regex.Pattern;
 
 /**
  * Engine是DataX入口类，该类负责初始化Job或者Task的运行容器，并运行插件的Job或者Task逻辑
+ * <p>
+ * 首先入口在Engine类，入口参数我们有“mode”、“jobId”、“job.json”（即运行的模式、任务id、任务配置等）
  */
 public class Engine {
     private static final Logger LOG = LoggerFactory.getLogger(Engine.class);
 
     private static String RUNTIME_MODE;
 
+    /**
+     * step3：初始化并启动容器
+     * <p>
+     * 根据配置初始化不同的容器并启动，目前只有两种容器，分别为JobContainer（作业任务容器）、
+     * TaskGroupContainer（分组任务容器），一般都是创建一个作业，先进JobContainer；
+     *
+     * @param allConf
+     */
     /* check job model (job/task) first */
     public void start(Configuration allConf) {
 
@@ -46,10 +56,13 @@ public class Engine {
          */
         LoadUtil.bind(allConf);
 
+        //判断是否为Job:
+        // -true: 初始化 JobContainer -false: 初始化TaskGroupContainer
         boolean isJob = !("taskGroup".equalsIgnoreCase(allConf
                 .getString(CoreConstant.DATAX_CORE_CONTAINER_MODEL)));
         //JobContainer会在schedule后再行进行设置和调整值
-        int channelNumber =0;
+        int channelNumber = 0;
+        //抽象容器，分为两种:JobContainer和TaskGroupContainer
         AbstractContainer container;
         long instanceId;
         int taskGroupId = -1;
@@ -74,21 +87,22 @@ public class Engine {
         boolean perfReportEnable = allConf.getBool(CoreConstant.DATAX_CORE_REPORT_DATAX_PERFLOG, true);
 
         //standalone模式的 datax shell任务不进行汇报
-        if(instanceId == -1){
+        if (instanceId == -1) {
             perfReportEnable = false;
         }
 
         int priority = 0;
         try {
             priority = Integer.parseInt(System.getenv("SKYNET_PRIORITY"));
-        }catch (NumberFormatException e){
-            LOG.warn("prioriy set to 0, because NumberFormatException, the value is: "+System.getProperty("PROIORY"));
+        } catch (NumberFormatException e) {
+            LOG.warn("prioriy set to 0, because NumberFormatException, the value is: " + System.getProperty("PROIORY"));
         }
 
         Configuration jobInfoConfig = allConf.getConfiguration(CoreConstant.DATAX_JOB_JOBINFO);
         //初始化PerfTrace
         PerfTrace perfTrace = PerfTrace.getInstance(isJob, instanceId, taskGroupId, priority, traceEnable);
-        perfTrace.setJobInfo(jobInfoConfig,perfReportEnable,channelNumber);
+        perfTrace.setJobInfo(jobInfoConfig, perfReportEnable, channelNumber);
+        // 启动容器
         container.start();
 
     }
@@ -102,12 +116,12 @@ public class Engine {
 
         filterSensitiveConfiguration(jobContent);
 
-        jobConfWithSetting.set("content",jobContent);
+        jobConfWithSetting.set("content", jobContent);
 
         return jobConfWithSetting.beautify();
     }
 
-    public static Configuration filterSensitiveConfiguration(Configuration configuration){
+    public static Configuration filterSensitiveConfiguration(Configuration configuration) {
         Set<String> keys = configuration.getKeys();
         for (final String key : keys) {
             boolean isSensitive = StringUtils.endsWithIgnoreCase(key, "password")
@@ -119,6 +133,13 @@ public class Engine {
         return configuration;
     }
 
+    /**
+     * step2: 封装配置
+     * 有了入口参数，会先校验，然后统一封装好成Configuration，传给下一步使用。
+     *
+     * @param args
+     * @throws Throwable
+     */
     public static void entry(final String[] args) throws Throwable {
         Options options = new Options();
         options.addOption("job", true, "Job config.");
@@ -134,6 +155,7 @@ public class Engine {
         String jobIdString = cl.getOptionValue("jobid");
         RUNTIME_MODE = cl.getOptionValue("mode");
 
+        // 封装配置
         Configuration configuration = ConfigParser.parse(jobPath);
 
         long jobId;
@@ -166,16 +188,18 @@ public class Engine {
 
         LOG.debug(configuration.toJSON());
 
+        // 校验配置
         ConfigurationValidate.doValidate(configuration);
         Engine engine = new Engine();
+        // 初始化并启动容器
         engine.start(configuration);
     }
 
 
     /**
      * -1 表示未能解析到 jobId
-     *
-     *  only for dsc & ds & datax 3 update
+     * <p>
+     * only for dsc & ds & datax 3 update
      */
     private static long parseJobIdFromUrl(List<String> patternStringList, String url) {
         long result = -1;
@@ -198,9 +222,11 @@ public class Engine {
         return -1;
     }
 
+    // step1：入口
     public static void main(String[] args) throws Exception {
         int exitCode = 0;
         try {
+            //程序入口
             Engine.entry(args);
         } catch (Throwable e) {
             exitCode = 1;

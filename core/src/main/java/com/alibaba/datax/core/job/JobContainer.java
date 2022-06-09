@@ -89,8 +89,12 @@ public class JobContainer extends AbstractContainer {
     }
 
     /**
+     * step4：JobContainer运行内容
+     *
      * jobContainer主要负责的工作全部在start()里面，包括init、prepare、split、scheduler、
      * post以及destroy和statistics
+     *
+     * 在JobContainer里面，会根据配置使用类加载器加载reader和writer的实例对象，然后出发加载对象的生命周期方法，如init()、prepare()、post()等；
      */
     @Override
     public void start() {
@@ -101,8 +105,10 @@ public class JobContainer extends AbstractContainer {
         try {
             this.startTimeStamp = System.currentTimeMillis();
             isDryRun = configuration.getBool(CoreConstant.DATAX_JOB_SETTING_DRYRUN, false);
+            //预演，指的就是检查配置是否正常
             if(isDryRun) {
                 LOG.info("jobContainer starts to do preCheck ...");
+                //预处理
                 this.preCheck();
             } else {
                 userConf = configuration.clone();
@@ -110,20 +116,26 @@ public class JobContainer extends AbstractContainer {
                 this.preHandle();
 
                 LOG.debug("jobContainer starts to do init ...");
+                //初始化Reader和Writer,并触发Reader和Writer里面的init方法
                 this.init();
                 LOG.info("jobContainer starts to do prepare ...");
+                //执行前，会触发Reader和writer里面的prepare方法
                 this.prepare();
                 LOG.info("jobContainer starts to do split ...");
+                //根据配置分割任务，计算需要分多少个任务和任务组
                 this.totalStage = this.split();
                 LOG.info("jobContainer starts to do schedule ...");
+                //开始调度，这里会进入TaskGroupContainer
                 this.schedule();
                 LOG.debug("jobContainer starts to do post ...");
+                //会触发Reader和Writer里面的post方法
                 this.post();
 
                 LOG.debug("jobContainer starts to do postHandle ...");
                 this.postHandle();
                 LOG.info("DataX jobId [{}] completed successfully.", this.jobId);
 
+                //触发钩子，监控整个容器的运行情况
                 this.invokeHooks();
             }
         } catch (Throwable e) {
@@ -486,6 +498,10 @@ public class JobContainer extends AbstractContainer {
     }
 
     /**
+     * step5：调度JobContainer
+     *
+     * JobContainer执行流程里，有一个schedule方法，主要是为了切割任务组，并初始化到TaskContainer，调度使用；
+     *
      * schedule首先完成的工作是把上一步reader和writer split的结果整合到具体taskGroupContainer中,
      * 同时不同的执行模式调用不同的调度策略，将所有任务调度起来
      */

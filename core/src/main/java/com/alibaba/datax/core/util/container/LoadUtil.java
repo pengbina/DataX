@@ -20,6 +20,10 @@ import java.util.Map;
  * <p/>
  * 插件加载器，大体上分reader、transformer（还未实现）和writer三中插件类型，
  * reader和writer在执行时又可能出现Job和Task两种运行时（加载的类不同）
+ *
+ * LoadUtil 插件加载工具
+ * 这一个工具类是一个插件加载器，大体上分reader、transformer（还未实现）和writer三中插件类型，
+ * reader和writer在执行时又可能出现Job和Task两种运行时（加载的类不同）。
  */
 public class LoadUtil {
     private static final String pluginTypeNameFormat = "plugin.%s.%s";

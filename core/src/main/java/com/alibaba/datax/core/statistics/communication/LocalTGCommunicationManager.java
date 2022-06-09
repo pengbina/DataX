@@ -7,6 +7,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * 通讯信息载体工厂：根据任务id来获取通讯信息载体单例的工厂；
+ */
 public final class LocalTGCommunicationManager {
     private static Map<Integer, Communication> taskGroupCommunicationMap =
             new ConcurrentHashMap<Integer, Communication>();

@@ -34,6 +34,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+/**
+ *  step6：TaskGroupContainer详解
+ *
+ *  TaskContainer主要是对任务进行初始化、并控制执行的顺序（如：reader -> transfromer -> writer）
+ *
+ */
 public class TaskGroupContainer extends AbstractContainer {
     private static final Logger LOG = LoggerFactory
             .getLogger(TaskGroupContainer.class);
@@ -137,6 +143,7 @@ public class TaskGroupContainer extends AbstractContainer {
             Map<Integer, Configuration> taskConfigMap = buildTaskConfigMap(taskConfigs); //taskId与task配置
             List<Configuration> taskQueue = buildRemainTasks(taskConfigs); //待运行task列表
             Map<Integer, TaskExecutor> taskFailedExecutorMap = new HashMap<Integer, TaskExecutor>(); //taskId与上次失败实例
+            //根据计算的通道数，对任务进行TaskGroup分组
             List<TaskExecutor> runTasks = new ArrayList<TaskExecutor>(channelNumber); //正在运行task
             Map<Integer, Long> taskStartTimeMap = new HashMap<Integer, Long>(); //任务开始时间
 
@@ -225,9 +232,11 @@ public class TaskGroupContainer extends AbstractContainer {
                         }
                     }
                     Configuration taskConfigForRun = taskMaxRetryTimes > 1 ? taskConfig.clone() : taskConfig;
-                	TaskExecutor taskExecutor = new TaskExecutor(taskConfigForRun, attemptCount);
+                	//初始化任务处理器
+                    TaskExecutor taskExecutor = new TaskExecutor(taskConfigForRun, attemptCount);
                     taskStartTimeMap.put(taskId, System.currentTimeMillis());
-                	taskExecutor.doStart();
+                	//启动任务Task
+                    taskExecutor.doStart();
 
                     iterator.remove();
                     runTasks.add(taskExecutor);
@@ -403,12 +412,17 @@ public class TaskGroupContainer extends AbstractContainer {
 
             /**
              * 获取transformer的参数
+             *
+             * 根据配置构建不同的Transformer
+             * 注意：这里的Transformer相当于"ETL"里面的“T"
              */
 
             List<TransformerExecution> transformerInfoExecs = TransformerUtil.buildTransformerInfo(taskConfig);
 
             /**
              * 生成writerThread
+             *
+             * 初始化写Runnable
              */
             writerRunner = (WriterRunner) generateRunner(PluginType.WRITER);
             this.writerThread = new Thread(writerRunner,
@@ -421,6 +435,8 @@ public class TaskGroupContainer extends AbstractContainer {
 
             /**
              * 生成readerThread
+             *
+             * 初始化读Runnable,注意这里注入了Transformer
              */
             readerRunner = (ReaderRunner) generateRunner(PluginType.READER,transformerInfoExecs);
             this.readerThread = new Thread(readerRunner,
@@ -435,6 +451,7 @@ public class TaskGroupContainer extends AbstractContainer {
         }
 
         public void doStart() {
+            // 必须先启动写线程
             this.writerThread.start();
 
             // reader没有起来，writer不可能结束
@@ -444,6 +461,8 @@ public class TaskGroupContainer extends AbstractContainer {
                         this.taskCommunication.getThrowable());
             }
 
+            // 启动读线程，注意上一步已经初始化了Transformer了，所以，这里启动的时候，
+            // Transformer也做了相应的操作
             this.readerThread.start();
 
             // 这里reader可能很快结束

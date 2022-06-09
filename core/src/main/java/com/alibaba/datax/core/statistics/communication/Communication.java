@@ -12,7 +12,12 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ *
+ * Communication 所有的状态及信息统计
+ *
  * DataX所有的状态及统计信息交互类，job、taskGroup、task等的消息汇报都走该类
+ *
+ * 通讯的信息载体：主要用来存放通讯过程中产生的信息，为单例；
  */
 public class Communication extends BaseObject implements Cloneable {
     /**

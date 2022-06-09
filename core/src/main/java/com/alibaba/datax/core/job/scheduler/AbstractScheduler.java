@@ -15,6 +15,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+/**
+ * AbstractScheduler 调度器
+ * 描述：主要就是根据job配置来调度TaskGroupContainer
+ */
 public abstract class AbstractScheduler {
     private static final Logger LOG = LoggerFactory
             .getLogger(AbstractScheduler.class);

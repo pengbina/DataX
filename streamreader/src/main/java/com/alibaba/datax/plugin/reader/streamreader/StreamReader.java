@@ -191,6 +191,12 @@ public class StreamReader extends Reader {
 
 	}
 
+	/**
+	 * step7：业务实现
+	 * 最后，具体的业务实现，就在Reader（即:E）、Transformer（即：T）、Writer（即：L）里面实现。
+	 * 经过前几个步骤的操作，最终哪里实现业务呢？DataX的例子是使用了StreamReader和StreamWriter的，我们Stream插件里
+	 *
+	 */
 	public static class Task extends Reader.Task {
 
 		private Configuration readerSliceConfig;
@@ -218,6 +224,10 @@ public class StreamReader extends Reader {
 		public void prepare() {
 		}
 
+		/**
+		 * 开始做读操作，并读完后，使用RecordSender发送给Writer
+		 * @param recordSender
+		 */
 		@Override
 		public void startRead(RecordSender recordSender) {
 			Record oneRecord = buildOneRecord(recordSender, this.columns);

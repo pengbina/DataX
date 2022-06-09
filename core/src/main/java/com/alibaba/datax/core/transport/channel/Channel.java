@@ -173,6 +173,17 @@ public abstract class Channel {
         return size;
     }
 
+    /**
+     * statPush整个流程的描述：
+     *
+     * 判断byteSpeed（bps）和recordSpeed（tps）是否都大于0？如果不是，则退出；
+     * 根据当前的byteSpeed和设定的byteSpeed对比，求出睡眠时间（公式：currentByteSpeed * interval / this.byteSpeed- interval;）
+     * 根据当前的recordSpeed和设定的recordSpeed对比，求出睡眠时间（公式：currentRecordSpeed * interval / this.recordSpeed - interval;）
+     * 取休眠时间最大值；
+     * Thread.sleep(sleepTime)来休眠
+     * @param recordSize
+     * @param byteSize
+     */
     private void statPush(long recordSize, long byteSize) {
         currentCommunication.increaseCounter(CommunicationTool.READ_SUCCEED_RECORDS,
                 recordSize);
